@@ -139,10 +139,9 @@
       color: var(--text);
       border-radius:14px;
       padding:10px 12px;
-      font-weight:800;
+      font-weight:900;
     }
     .toast.show{display:block}
-    code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
   </style>
 </head>
 <body>
@@ -220,7 +219,7 @@
           </div>
 
           <div class="info">
-            Consejo: tú normalmente usarás el “Link mágico” y no tendrás que tocar esto.
+            Consejo: normalmente usarás el “Link mágico” y no tendrás que tocar esto.
           </div>
         </details>
 
@@ -239,10 +238,9 @@
   </div>
 
 <script>
-  const KEY="tb_zoom_magic_v1";
+  const KEY="tb_zoom_magic_v2";
   const $=id=>document.getElementById(id);
 
-  // Defaults (solo para tener algo si está vacío)
   const DEFAULTS = {
     date: "2026-02-28",
     time: "13:00",
@@ -272,8 +270,6 @@
     const rem = remRaw ? Math.max(1, Math.min(180, Number(remRaw))) : null;
     const link = (p.get("link")||"").trim();
     const wa = (p.get("wa")||"").trim();
-
-    // Si hay link y al menos fecha+hora, consideramos update válido
     const hasAny = !!(date || time || link || remRaw || wa);
     return {hasAny, date, time, rem, link, wa};
   }
@@ -291,17 +287,15 @@
       wa: q.wa || current.wa || DEFAULTS.wa
     };
 
-    // Si no hay link, no hacemos update “mágico” (evita guardar basura)
-    if(!next.link){
-      return false;
-    }
+    // Solo aplicamos update “mágico” si hay link
+    if(!next.link) return false;
 
     save(next);
 
-    // limpiamos la URL para que no quede el link expuesto en pantalla/historial
+    // Limpia la URL (privacidad)
     history.replaceState({}, document.title, location.pathname);
 
-    // toast
+    // Toast
     const t=$("toast");
     t.classList.add("show");
     setTimeout(()=>t.classList.remove("show"), 7000);
@@ -309,7 +303,6 @@
     return true;
   }
 
-  // Construye instante real interpretando fecha/hora como zona Colombia (America/Bogota)
   function toBogotaDate(dateStr, timeStr){
     const [y,m,d]=dateStr.split("-").map(Number);
     const [hh,mm]=(timeStr||"00:00").split(":").map(Number);
@@ -345,7 +338,7 @@
   }
 
   function openZoom(link){
-    if(!link) return alert("⚠️ Falta el link de Zoom. Pídele a Julian que te mande el link.");
+    if(!link) return alert("⚠️ Falta el link de Zoom. Usa “Compartir link mágico” o pega el link y guarda.");
     window.location.href = link;
   }
 
@@ -368,20 +361,26 @@
     }catch(_){}
   }
 
-  let loop=null;
-  let firedKey="";
-
-  function render(){
+  // ✅ Render separado: display siempre, form solo si NO estás editando
+  function renderDisplayOnly(){
     const data = load() || DEFAULTS;
     const hasLink = !!(data.link && data.link.trim());
     const dt = toBogotaDate(data.date, data.time);
 
     $("whenText").textContent = formatBogota(dt);
     const st = getStatus(dt, Number(data.rem||15), hasLink);
-    $("statusText").innerHTML = `${st.text} ${st.cls ? `<span class="pill ${st.cls}">${st.cls==="soon"?"ALERTA":(st.cls==="ok"?"OK":"FALTA")}</span>`:""}`;
-    $("curLink").textContent = "Link actual: " + (hasLink ? data.link : "— (sin link)");
+    $("statusText").innerHTML =
+      `${st.text} ${st.cls ? `<span class="pill ${st.cls}">${st.cls==="soon"?"ALERTA":(st.cls==="ok"?"OK":"FALTA")}</span>`:""}`;
 
-    // Admin fields
+    $("curLink").textContent = "Link actual: " + (hasLink ? data.link : "— (sin link)");
+  }
+
+  function renderFormIfNotEditing(){
+    const active = document.activeElement;
+    const isEditing = active && ["date","time","link","rem","wa"].includes(active.id);
+    if(isEditing) return;
+
+    const data = load() || DEFAULTS;
     $("date").value = data.date || "";
     $("time").value = data.time || "";
     $("link").value = data.link || "";
@@ -389,19 +388,24 @@
     $("wa").value = data.wa || "";
   }
 
+  let loop=null;
+  let firedKey="";
+
   function startLoop(){
     if(loop) clearInterval(loop);
     loop=setInterval(()=>{
       const data = load() || DEFAULTS;
       const hasLink = !!(data.link && data.link.trim());
-      if(!hasLink){ firedKey=""; render(); return; }
+
+      renderDisplayOnly();
+      renderFormIfNotEditing();
+
+      if(!hasLink){ firedKey=""; return; }
 
       const dt = toBogotaDate(data.date, data.time);
       const rem = Number(data.rem||15);
       const fireAt = new Date(dt.getTime() - rem*60*1000);
       const now = new Date();
-
-      render();
 
       const thisKey = `${data.date}|${data.time}|${data.link}|${rem}`;
       if(now >= fireAt && now <= new Date(fireAt.getTime()+30*1000)){
@@ -420,14 +424,13 @@
   }
 
   function makeMagicURL(data){
-    // Construye un link mágico usando la URL actual como base
-    const base = location.origin + location.pathname; // zoom.html
+    const base = location.origin + location.pathname; // index.html o zoom.html
     const p = new URLSearchParams();
     p.set("date", data.date);
     p.set("time", data.time);
     p.set("rem", String(data.rem||15));
     if(data.wa) p.set("wa", data.wa);
-    p.set("link", data.link); // URLSearchParams lo encodea
+    p.set("link", data.link); // URLSearchParams encodea
     return base + "?" + p.toString();
   }
 
@@ -447,7 +450,8 @@
     if(!link) return alert("Pega el link de Zoom.");
     save({date,time,link,rem,wa});
     firedKey="";
-    render();
+    renderDisplayOnly();
+    renderFormIfNotEditing();
     alert("Guardado ✅");
   };
 
@@ -455,24 +459,24 @@
     if(!confirm("¿Borrar datos guardados?")) return;
     localStorage.removeItem(KEY);
     firedKey="";
-    render();
+    renderDisplayOnly();
+    renderFormIfNotEditing();
   };
 
   $("btnShareLink").onclick = ()=>{
     const data = load() || DEFAULTS;
     if(!data.link) return alert("Primero guarda un link de Zoom.");
     const magic = makeMagicURL(data);
-
     const msg = encodeURIComponent(
-      "Abre este enlace para dejar lista la conferencia y luego toca “ENTRAR A ZOOM”:\n\n" +
-      magic
+      "Abre este enlace para dejar lista la conferencia y luego toca “ENTRAR A ZOOM”:\n\n" + magic
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   // INIT
-  applyMagicIfPresent(); // si llegó por WhatsApp con parámetros, actualiza y limpia URL
-  render();
+  applyMagicIfPresent();
+  renderDisplayOnly();
+  renderFormIfNotEditing();
   startLoop();
 </script>
 </body>
