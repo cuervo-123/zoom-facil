@@ -174,9 +174,15 @@
           </div>
         </div>
 
+        <!-- ✅ NUEVA FILA: CALENDARIO -->
         <div class="row" style="margin-top:12px">
+          <button class="mini good" id="btnCalendar">📅 Agregar al calendario (alarma real)</button>
           <button class="mini warn" id="btnTest">🧪 Probar abrir Zoom</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
           <button class="mini" id="btnShareLink">📲 Compartir “Link mágico”</button>
+          <button class="mini" id="btnShareICS">📩 Enviar invitación (ICS)</button>
         </div>
 
         <div class="smallLink" id="curLink">Link actual: —</div>
@@ -219,26 +225,26 @@
           </div>
 
           <div class="info">
-            Consejo: normalmente usarás el “Link mágico” y no tendrás que tocar esto.
+            Consejo: normalmente usarás el “Link mágico” y listo.
           </div>
         </details>
 
         <div class="info">
           <b>Para tu familiar:</b><br>
-          1) Toca <b>ENTRAR A ZOOM</b> cuando sea la hora.<br>
-          2) Si pregunta, elige <b>“Abrir en Zoom”</b>.<br>
-          3) (Opcional) activa alertas una vez.<br>
+          1) Toca <b>📅 Agregar al calendario</b> para que el teléfono recuerde la reunión.<br>
+          2) Cuando suene la alarma, toca <b>ENTRAR A ZOOM</b>.<br>
+          3) Si pregunta, elige <b>“Abrir en Zoom”</b>.<br>
         </div>
       </div>
 
       <div class="footer">
-        Esto solo facilita entrar al Zoom de verdad (no finge asistencia).
+        Calendario = alarma nativa del teléfono (la más confiable). La app sigue siendo el botón para entrar.
       </div>
     </div>
   </div>
 
 <script>
-  const KEY="tb_zoom_magic_v2";
+  const KEY="tb_zoom_magic_v3_calendar";
   const $=id=>document.getElementById(id);
 
   const DEFAULTS = {
@@ -287,15 +293,11 @@
       wa: q.wa || current.wa || DEFAULTS.wa
     };
 
-    // Solo aplicamos update “mágico” si hay link
     if(!next.link) return false;
 
     save(next);
-
-    // Limpia la URL (privacidad)
     history.replaceState({}, document.title, location.pathname);
 
-    // Toast
     const t=$("toast");
     t.classList.add("show");
     setTimeout(()=>t.classList.remove("show"), 7000);
@@ -303,6 +305,7 @@
     return true;
   }
 
+  // Instante real interpretando fecha/hora como zona Colombia (America/Bogota)
   function toBogotaDate(dateStr, timeStr){
     const [y,m,d]=dateStr.split("-").map(Number);
     const [hh,mm]=(timeStr||"00:00").split(":").map(Number);
@@ -343,22 +346,11 @@
   }
 
   async function enableNoti(){
-    if(!("Notification" in window)) return alert("Este navegador no soporta notificaciones.");
+    // Sigue existiendo, pero no dependemos de esto. El calendario es el plan real.
+    if(!("Notification" in window)) return alert("Este navegador no soporta notificaciones. Usa el botón 📅 Calendario (recomendado).");
     const perm = await Notification.requestPermission();
-    if(perm!=="granted") return alert("No se permitieron notificaciones.");
+    if(perm!=="granted") return alert("No se permitieron notificaciones. Usa el botón 📅 Calendario (recomendado).");
     alert("Listo ✅ Alertas activadas.");
-  }
-
-  function beep(){
-    try{
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = 880; g.gain.value = 0.06;
-      o.start();
-      setTimeout(()=>{ o.stop(); ctx.close(); }, 380);
-    }catch(_){}
   }
 
   // ✅ Render separado: display siempre, form solo si NO estás editando
@@ -389,49 +381,106 @@
   }
 
   let loop=null;
-  let firedKey="";
-
   function startLoop(){
     if(loop) clearInterval(loop);
     loop=setInterval(()=>{
-      const data = load() || DEFAULTS;
-      const hasLink = !!(data.link && data.link.trim());
-
       renderDisplayOnly();
       renderFormIfNotEditing();
-
-      if(!hasLink){ firedKey=""; return; }
-
-      const dt = toBogotaDate(data.date, data.time);
-      const rem = Number(data.rem||15);
-      const fireAt = new Date(dt.getTime() - rem*60*1000);
-      const now = new Date();
-
-      const thisKey = `${data.date}|${data.time}|${data.link}|${rem}`;
-      if(now >= fireAt && now <= new Date(fireAt.getTime()+30*1000)){
-        if(firedKey !== thisKey){
-          firedKey = thisKey;
-          beep();
-          try{
-            if(Notification.permission==="granted"){
-              new Notification("🔔 Conferencia Zoom pronto", { body: "Toca ENTRAR A ZOOM para conectarte." });
-            }
-          }catch(_){}
-          alert("🔔 Conferencia pronto. Toca ENTRAR A ZOOM.");
-        }
-      }
     }, 1000);
   }
 
   function makeMagicURL(data){
-    const base = location.origin + location.pathname; // index.html o zoom.html
+    const base = location.origin + location.pathname;
     const p = new URLSearchParams();
     p.set("date", data.date);
     p.set("time", data.time);
     p.set("rem", String(data.rem||15));
     if(data.wa) p.set("wa", data.wa);
-    p.set("link", data.link); // URLSearchParams encodea
+    p.set("link", data.link);
     return base + "?" + p.toString();
+  }
+
+  // =============== ✅ CALENDARIO (.ics) =================
+  function pad2(n){ return String(n).padStart(2,"0"); }
+
+  function formatICSDateUTC(d){
+    // YYYYMMDDTHHMMSSZ en UTC
+    return d.getUTCFullYear() +
+      pad2(d.getUTCMonth()+1) +
+      pad2(d.getUTCDate()) + "T" +
+      pad2(d.getUTCHours()) +
+      pad2(d.getUTCMinutes()) +
+      pad2(d.getUTCSeconds()) + "Z";
+  }
+
+  function escapeICSText(s){
+    return String(s||"")
+      .replace(/\\/g,"\\\\")
+      .replace(/\n/g,"\\n")
+      .replace(/,/g,"\\,")
+      .replace(/;/g,"\\;");
+  }
+
+  function buildICS(data){
+    const dtStart = toBogotaDate(data.date, data.time);       // instante real
+    const dtEnd = new Date(dtStart.getTime() + 60*60*1000);   // 1 hora
+    const uid = "techblue-zoom-" + Date.now() + "@zoom-facil";
+    const title = "Conferencia Condominio (Zoom)";
+    const desc = `Entrar al Zoom: ${data.link || "(sin link)"}\n\n(Generado por Tech Blue Zoom Fácil)`;
+    const loc = data.link || "Zoom";
+
+    // Alarmas: 30 y 10 min antes (muy útil)
+    const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Tech Blue//Zoom Facil//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${formatICSDateUTC(new Date())}
+DTSTART:${formatICSDateUTC(dtStart)}
+DTEND:${formatICSDateUTC(dtEnd)}
+SUMMARY:${escapeICSText(title)}
+DESCRIPTION:${escapeICSText(desc)}
+LOCATION:${escapeICSText(loc)}
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+DESCRIPTION:Recordatorio conferencia Zoom (30 min)
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT10M
+ACTION:DISPLAY
+DESCRIPTION:Recordatorio conferencia Zoom (10 min)
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+    return ics;
+  }
+
+  function downloadICS(){
+    const data = load() || DEFAULTS;
+    if(!data.date || !data.time) return alert("Falta fecha/hora.");
+    if(!data.link) return alert("Falta el link de Zoom. Actualiza primero.");
+
+    const ics = buildICS(data);
+    const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `conferencia-zoom-${data.date}-${data.time.replace(":","")}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function shareICS(){
+    // WhatsApp no adjunta archivos directo desde URL sin backend, pero:
+    // 1) Descargas el .ics
+    // 2) Lo compartes desde el teléfono a Calendario/WhatsApp
+    alert("📌 Paso 1: toca “📅 Agregar al calendario” para descargar el archivo.\nPaso 2: abre el archivo y agrégalo al calendario.\n(Sugerencia: desde la app Archivos/Descargas puedes compartirlo.)");
+    downloadICS();
   }
 
   // Buttons
@@ -449,7 +498,6 @@
     if(!cleanDate(date) || !cleanTime(time)) return alert("Pon fecha (YYYY-MM-DD) y hora (HH:MM).");
     if(!link) return alert("Pega el link de Zoom.");
     save({date,time,link,rem,wa});
-    firedKey="";
     renderDisplayOnly();
     renderFormIfNotEditing();
     alert("Guardado ✅");
@@ -458,7 +506,6 @@
   $("btnReset").onclick = ()=>{
     if(!confirm("¿Borrar datos guardados?")) return;
     localStorage.removeItem(KEY);
-    firedKey="";
     renderDisplayOnly();
     renderFormIfNotEditing();
   };
@@ -472,6 +519,10 @@
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
+
+  // ✅ Calendario
+  $("btnCalendar").onclick = downloadICS;
+  $("btnShareICS").onclick = shareICS;
 
   // INIT
   applyMagicIfPresent();
