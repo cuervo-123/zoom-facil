@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Entrar a Zoom · Fácil</title>
+  <meta name="color-scheme" content="dark">
+  <style>
+    :root{
+      --bg0:#020512; --bg1:#06103a; --panel:rgba(8,18,48,.78);
+      --line:rgba(79,155,255,.25);
+      --text:#eaf2ff; --muted:#9fb3d9;
+      --accent:#4aa3ff; --accent2:#2de2ff;
+      --good:#33d69f; --warn:#ffd166; --bad:#ff5c7a;
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      min-height:100vh;
+      background:
+        radial-gradient(900px 500px at 30% -10%, rgba(74,163,255,.25), transparent 60%),
+        radial-gradient(900px 500px at 80% 0%, rgba(45,226,255,.14), transparent 55%),
+        linear-gradient(180deg,var(--bg1),var(--bg0));
+      display:flex; justify-content:center; padding:16px;
+    }
+    .app{width:min(860px,100%); display:grid; gap:14px}
+    .card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      box-shadow:0 14px 50px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    header{
+      padding:16px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .dot{
+      width:12px;height:12px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, var(--accent2), var(--accent));
+      box-shadow:0 0 18px rgba(74,163,255,.55);
+    }
+    h1{font-size:16px;margin:0}
+    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+    .content{padding:14px 16px 16px}
+    .big{
+      width:100%;
+      padding:18px 14px;
+      border-radius:18px;
+      border:1px solid rgba(79,155,255,.28);
+      background: linear-gradient(90deg, rgba(74,163,255,.38), rgba(45,226,255,.22));
+      color:var(--text);
+      font-size:19px;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 0 24px rgba(74,163,255,.22);
+    }
+    .row{display:grid; gap:10px; grid-template-columns:1fr 1fr}
+    @media(max-width:640px){.row{grid-template-columns:1fr}}
+    .mini{
+      width:100%;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(79,155,255,.22);
+      background: rgba(74,163,255,.10);
+      color:var(--text);
+      font-weight:800;
+      cursor:pointer;
+    }
+    .mini.good{border-color: rgba(51,214,159,.35); background: rgba(51,214,159,.10)}
+    .mini.warn{border-color: rgba(255,209,102,.35); background: rgba(255,209,102,.08)}
+    .mini.danger{border-color: rgba(255,92,122,.40); background: rgba(255,92,122,.10)}
+
+    .kpi{
+      display:grid; gap:10px; grid-template-columns: 1fr 1fr; margin-top:12px;
+    }
+    @media(max-width:640px){.kpi{grid-template-columns:1fr}}
+    .kbox{
+      border:1px solid rgba(79,155,255,.18);
+      background: rgba(2,6,18,.35);
+      border-radius:16px;
+      padding:12px;
+    }
+    .kbox .t{font-size:12px;color:var(--muted)}
+    .kbox .v{font-size:16px;font-weight:900;margin-top:4px}
+
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      border:1px solid rgba(79,155,255,.22); color:var(--muted);
+      font-size:12px; margin-left:8px;
+    }
+    .pill.soon{border-color: rgba(255,209,102,.45); color: var(--warn)}
+    .pill.ok{border-color: rgba(51,214,159,.45); color: var(--good)}
+    .pill.bad{border-color: rgba(255,92,122,.45); color: var(--bad)}
+
+    .info{
+      margin-top:12px; font-size:13px; color:var(--muted); line-height:1.45;
+    }
+    .footer{
+      padding:12px 16px; border-top:1px solid var(--line);
+      font-size:12px;color:var(--muted);
+    }
+
+    /* Admin panel */
+    details{
+      margin-top:12px;
+      border:1px solid rgba(79,155,255,.18);
+      background: rgba(2,6,18,.25);
+      border-radius:16px;
+      padding:10px 12px;
+    }
+    summary{cursor:pointer; font-weight:900}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input, select{
+      width:100%;
+      background: rgba(2,6,18,.55);
+      border:1px solid rgba(79,155,255,.25);
+      color:var(--text);
+      border-radius:14px;
+      padding:12px;
+      outline:none;
+      font-size:15px;
+    }
+    .smallLink{
+      font-size:12px; color:var(--muted);
+      word-break:break-all;
+      margin-top:10px;
+    }
+    .toast{
+      display:none;
+      margin-top:12px;
+      border:1px solid rgba(51,214,159,.35);
+      background: rgba(51,214,159,.10);
+      color: var(--text);
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:800;
+    }
+    .toast.show{display:block}
+    code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <header>
+        <div class="brand">
+          <span class="dot"></span>
+          <div>
+            <h1>Entrar a Zoom · Fácil</h1>
+            <div class="sub">Un botón. Cero estrés. Hora Colombia.</div>
+          </div>
+        </div>
+        <button class="mini" id="btnNoti">🔔 Alertas</button>
+      </header>
+
+      <div class="content">
+        <button class="big" id="btnJoin">▶️ ENTRAR A ZOOM</button>
+
+        <div class="toast" id="toast">✅ Actualizado por link (WhatsApp)</div>
+
+        <div class="kpi">
+          <div class="kbox">
+            <div class="t">Próxima conferencia (Colombia)</div>
+            <div class="v" id="whenText">—</div>
+          </div>
+          <div class="kbox">
+            <div class="t">Estado</div>
+            <div class="v" id="statusText">—</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="mini warn" id="btnTest">🧪 Probar abrir Zoom</button>
+          <button class="mini" id="btnShareLink">📲 Compartir “Link mágico”</button>
+        </div>
+
+        <div class="smallLink" id="curLink">Link actual: —</div>
+
+        <details>
+          <summary>🔧 Admin (editar manual)</summary>
+          <div class="row">
+            <div>
+              <label>Fecha (Colombia)</label>
+              <input id="date" type="date">
+            </div>
+            <div>
+              <label>Hora (Colombia)</label>
+              <input id="time" type="time">
+            </div>
+          </div>
+
+          <label>Link de Zoom</label>
+          <input id="link" placeholder="https://us06web.zoom.us/j/... o zoommtg://...">
+
+          <div class="row">
+            <div>
+              <label>Recordatorio (min antes)</label>
+              <select id="rem">
+                <option value="10">10</option>
+                <option value="15" selected>15</option>
+                <option value="30">30</option>
+                <option value="60">60</option>
+              </select>
+            </div>
+            <div>
+              <label>WhatsApp (opcional) para avisar “Ya entré”</label>
+              <input id="wa" placeholder="Ej: 573001112233 (sin +, sin espacios)">
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="mini good" id="btnSave">💾 Guardar</button>
+            <button class="mini danger" id="btnReset">🗑️ Borrar</button>
+          </div>
+
+          <div class="info">
+            Consejo: tú normalmente usarás el “Link mágico” y no tendrás que tocar esto.
+          </div>
+        </details>
+
+        <div class="info">
+          <b>Para tu familiar:</b><br>
+          1) Toca <b>ENTRAR A ZOOM</b> cuando sea la hora.<br>
+          2) Si pregunta, elige <b>“Abrir en Zoom”</b>.<br>
+          3) (Opcional) activa alertas una vez.<br>
+        </div>
+      </div>
+
+      <div class="footer">
+        Esto solo facilita entrar al Zoom de verdad (no finge asistencia).
+      </div>
+    </div>
+  </div>
+
+<script>
+  const KEY="tb_zoom_magic_v1";
+  const $=id=>document.getElementById(id);
+
+  // Defaults (solo para tener algo si está vacío)
+  const DEFAULTS = {
+    date: "2026-02-28",
+    time: "13:00",
+    link: "",
+    rem: 15,
+    wa: ""
+  };
+
+  function load(){
+    try{
+      const x = JSON.parse(localStorage.getItem(KEY)||"null");
+      return x && typeof x==="object" ? x : null;
+    }catch(_){ return null; }
+  }
+  function save(data){
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  function cleanDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s||"") ? s : ""; }
+  function cleanTime(s){ return /^\d{2}:\d{2}$/.test(s||"") ? s : ""; }
+
+  function parseQuery(){
+    const p = new URLSearchParams(location.search);
+    const date = cleanDate(p.get("date")||"");
+    const time = cleanTime(p.get("time")||"");
+    const remRaw = p.get("rem");
+    const rem = remRaw ? Math.max(1, Math.min(180, Number(remRaw))) : null;
+    const link = (p.get("link")||"").trim();
+    const wa = (p.get("wa")||"").trim();
+
+    // Si hay link y al menos fecha+hora, consideramos update válido
+    const hasAny = !!(date || time || link || remRaw || wa);
+    return {hasAny, date, time, rem, link, wa};
+  }
+
+  function applyMagicIfPresent(){
+    const q = parseQuery();
+    if(!q.hasAny) return false;
+
+    const current = load() || DEFAULTS;
+    const next = {
+      date: q.date || current.date || DEFAULTS.date,
+      time: q.time || current.time || DEFAULTS.time,
+      link: q.link || current.link || DEFAULTS.link,
+      rem: (q.rem!=null && !Number.isNaN(q.rem)) ? q.rem : (current.rem || DEFAULTS.rem),
+      wa: q.wa || current.wa || DEFAULTS.wa
+    };
+
+    // Si no hay link, no hacemos update “mágico” (evita guardar basura)
+    if(!next.link){
+      return false;
+    }
+
+    save(next);
+
+    // limpiamos la URL para que no quede el link expuesto en pantalla/historial
+    history.replaceState({}, document.title, location.pathname);
+
+    // toast
+    const t=$("toast");
+    t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"), 7000);
+
+    return true;
+  }
+
+  // Construye instante real interpretando fecha/hora como zona Colombia (America/Bogota)
+  function toBogotaDate(dateStr, timeStr){
+    const [y,m,d]=dateStr.split("-").map(Number);
+    const [hh,mm]=(timeStr||"00:00").split(":").map(Number);
+    const utcGuess = new Date(Date.UTC(y, m-1, d, hh, mm, 0, 0));
+
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Bogota",
+      hour12:false, year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit", second:"2-digit"
+    });
+    const parts = Object.fromEntries(fmt.formatToParts(utcGuess).map(p=>[p.type,p.value]));
+    const bogotaAsUTC = Date.UTC(+parts.year, +parts.month-1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    const offsetMs = bogotaAsUTC - utcGuess.getTime();
+    return new Date(utcGuess.getTime() - offsetMs);
+  }
+
+  function formatBogota(dt){
+    return new Intl.DateTimeFormat("es-CO", {
+      timeZone: "America/Bogota",
+      weekday:"long", year:"numeric", month:"long", day:"2-digit",
+      hour:"2-digit", minute:"2-digit"
+    }).format(dt);
+  }
+
+  function getStatus(dt, remMin, hasLink){
+    if(!hasLink) return {text:"Falta link", cls:"bad"};
+    const now = new Date();
+    const diff = dt - now;
+    if(diff <= 0 && diff >= -60*60*1000) return {text:"En curso / recién empezó", cls:"ok"};
+    if(diff < -60*60*1000) return {text:"Ya pasó", cls:""};
+    if(diff <= remMin*60*1000) return {text:"En breve", cls:"soon"};
+    return {text:"Programada", cls:""};
+  }
+
+  function openZoom(link){
+    if(!link) return alert("⚠️ Falta el link de Zoom. Pídele a Julian que te mande el link.");
+    window.location.href = link;
+  }
+
+  async function enableNoti(){
+    if(!("Notification" in window)) return alert("Este navegador no soporta notificaciones.");
+    const perm = await Notification.requestPermission();
+    if(perm!=="granted") return alert("No se permitieron notificaciones.");
+    alert("Listo ✅ Alertas activadas.");
+  }
+
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; g.gain.value = 0.06;
+      o.start();
+      setTimeout(()=>{ o.stop(); ctx.close(); }, 380);
+    }catch(_){}
+  }
+
+  let loop=null;
+  let firedKey="";
+
+  function render(){
+    const data = load() || DEFAULTS;
+    const hasLink = !!(data.link && data.link.trim());
+    const dt = toBogotaDate(data.date, data.time);
+
+    $("whenText").textContent = formatBogota(dt);
+    const st = getStatus(dt, Number(data.rem||15), hasLink);
+    $("statusText").innerHTML = `${st.text} ${st.cls ? `<span class="pill ${st.cls}">${st.cls==="soon"?"ALERTA":(st.cls==="ok"?"OK":"FALTA")}</span>`:""}`;
+    $("curLink").textContent = "Link actual: " + (hasLink ? data.link : "— (sin link)");
+
+    // Admin fields
+    $("date").value = data.date || "";
+    $("time").value = data.time || "";
+    $("link").value = data.link || "";
+    $("rem").value = String(data.rem || 15);
+    $("wa").value = data.wa || "";
+  }
+
+  function startLoop(){
+    if(loop) clearInterval(loop);
+    loop=setInterval(()=>{
+      const data = load() || DEFAULTS;
+      const hasLink = !!(data.link && data.link.trim());
+      if(!hasLink){ firedKey=""; render(); return; }
+
+      const dt = toBogotaDate(data.date, data.time);
+      const rem = Number(data.rem||15);
+      const fireAt = new Date(dt.getTime() - rem*60*1000);
+      const now = new Date();
+
+      render();
+
+      const thisKey = `${data.date}|${data.time}|${data.link}|${rem}`;
+      if(now >= fireAt && now <= new Date(fireAt.getTime()+30*1000)){
+        if(firedKey !== thisKey){
+          firedKey = thisKey;
+          beep();
+          try{
+            if(Notification.permission==="granted"){
+              new Notification("🔔 Conferencia Zoom pronto", { body: "Toca ENTRAR A ZOOM para conectarte." });
+            }
+          }catch(_){}
+          alert("🔔 Conferencia pronto. Toca ENTRAR A ZOOM.");
+        }
+      }
+    }, 1000);
+  }
+
+  function makeMagicURL(data){
+    // Construye un link mágico usando la URL actual como base
+    const base = location.origin + location.pathname; // zoom.html
+    const p = new URLSearchParams();
+    p.set("date", data.date);
+    p.set("time", data.time);
+    p.set("rem", String(data.rem||15));
+    if(data.wa) p.set("wa", data.wa);
+    p.set("link", data.link); // URLSearchParams lo encodea
+    return base + "?" + p.toString();
+  }
+
+  // Buttons
+  $("btnJoin").onclick = ()=> openZoom((load()||DEFAULTS).link);
+  $("btnTest").onclick = ()=> openZoom(($("link").value.trim()) || (load()||DEFAULTS).link);
+  $("btnNoti").onclick = enableNoti;
+
+  $("btnSave").onclick = ()=>{
+    const date=$("date").value;
+    const time=$("time").value;
+    const link=$("link").value.trim();
+    const rem=Math.max(1, Math.min(180, Number($("rem").value||15)));
+    const wa=$("wa").value.trim();
+
+    if(!cleanDate(date) || !cleanTime(time)) return alert("Pon fecha (YYYY-MM-DD) y hora (HH:MM).");
+    if(!link) return alert("Pega el link de Zoom.");
+    save({date,time,link,rem,wa});
+    firedKey="";
+    render();
+    alert("Guardado ✅");
+  };
+
+  $("btnReset").onclick = ()=>{
+    if(!confirm("¿Borrar datos guardados?")) return;
+    localStorage.removeItem(KEY);
+    firedKey="";
+    render();
+  };
+
+  $("btnShareLink").onclick = ()=>{
+    const data = load() || DEFAULTS;
+    if(!data.link) return alert("Primero guarda un link de Zoom.");
+    const magic = makeMagicURL(data);
+
+    const msg = encodeURIComponent(
+      "Abre este enlace para dejar lista la conferencia y luego toca “ENTRAR A ZOOM”:\n\n" +
+      magic
+    );
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
+
+  // INIT
+  applyMagicIfPresent(); // si llegó por WhatsApp con parámetros, actualiza y limpia URL
+  render();
+  startLoop();
+</script>
+</body>
+</html>
